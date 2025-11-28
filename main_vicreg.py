@@ -13,6 +13,7 @@ import os
 import sys
 import time
 
+# import dataset
 import torch
 import torch.nn.functional as F
 from torch import nn, optim
@@ -92,7 +93,11 @@ def main(args):
     transforms = aug.TrainTransform()
 
     dataset = datasets.ImageFolder(args.data_dir / "train", transforms)
-    sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=True)
+
+    if args.world_size > 1:
+      sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=True)
+    else:
+       sampler = torch.utils.data.RandomSampler(dataset)    
     assert args.batch_size % args.world_size == 0
     per_device_batch_size = args.batch_size // args.world_size
     loader = torch.utils.data.DataLoader(
@@ -103,9 +108,19 @@ def main(args):
         sampler=sampler,
     )
 
-    model = VICReg(args).cuda(gpu)
+    # ---------------------------
+# FIX FOR CPU TRAINING
+# ---------------------------
+    if args.device == "cpu":
+        device = torch.device("cpu")
+        model = VICReg(args).to(device)
+    else:
+        model = VICReg(args).cuda(args.local_rank if args.local_rank != -1 else 0)
+
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu])
+    if args.distributed:
+        torch.cuda.set_device(gpu)
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[gpu])
     optimizer = LARS(
         model.parameters(),
         lr=0,
@@ -113,6 +128,8 @@ def main(args):
         weight_decay_filter=exclude_bias_and_norm,
         lars_adaptation_filter=exclude_bias_and_norm,
     )
+
+
 
     if (args.exp_dir / "model.pth").is_file():
         if args.rank == 0:
@@ -127,10 +144,13 @@ def main(args):
     start_time = last_logging = time.time()
     scaler = torch.cuda.amp.GradScaler()
     for epoch in range(start_epoch, args.epochs):
-        sampler.set_epoch(epoch)
+        if args.distributed:
+            sampler.set_epoch(epoch)
         for step, ((x, y), _) in enumerate(loader, start=epoch * len(loader)):
-            x = x.cuda(gpu, non_blocking=True)
-            y = y.cuda(gpu, non_blocking=True)
+            # x = x.cuda(gpu, non_blocking=True)
+            # y = y.cuda(gpu, non_blocking=True)
+            x = x.to("cpu")
+            y = y.to("cpu")
 
             lr = adjust_learning_rate(args, optimizer, loader, step)
 
@@ -190,6 +210,8 @@ class VICReg(nn.Module):
             zero_init_residual=True
         )
         self.projector = Projector(args, self.embedding)
+        self.distributed = getattr(args, "distributed", False)
+
 
     def forward(self, x, y):
         x = self.projector(self.backbone(x))
@@ -197,8 +219,12 @@ class VICReg(nn.Module):
 
         repr_loss = F.mse_loss(x, y)
 
-        x = torch.cat(FullGatherLayer.apply(x), dim=0)
-        y = torch.cat(FullGatherLayer.apply(y), dim=0)
+        if not self.distributed:
+            x = x
+            y = y
+        else:
+            x = torch.cat(FullGatherLayer.apply(x), dim=0)
+            y = torch.cat(FullGatherLayer.apply(y), dim=0)
         x = x - x.mean(dim=0)
         y = y - y.mean(dim=0)
 
@@ -333,6 +359,13 @@ def handle_sigterm(signum, frame):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('VICReg training script', parents=[get_arguments()])
+    parser = argparse.ArgumentParser('VICReg-training-script', parents=[get_arguments()])
     args = parser.parse_args()
+    if not hasattr(args, 'rank'):
+        args.rank = 0
+    print(f"Running VICReg with args: {args}")
+    if args.device == "cpu":
+        args.distributed = False
+        args.world_size = 1
+        args.local_rank = -1
     main(args)
