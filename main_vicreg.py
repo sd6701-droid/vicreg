@@ -134,7 +134,11 @@ def main(args):
     if (args.exp_dir / "model.pth").is_file():
         if args.rank == 0:
             print("resuming from checkpoint")
-        ckpt = torch.load(args.exp_dir / "model.pth", map_location="cpu")
+        ckpt = torch.load(
+            args.exp_dir / "model.pth", 
+            map_location="cpu",        
+            weights_only=False
+        )
         start_epoch = ckpt["epoch"]
         model.load_state_dict(ckpt["model"])
         optimizer.load_state_dict(ckpt["optimizer"])
