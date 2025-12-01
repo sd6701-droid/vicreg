@@ -246,7 +246,8 @@ def main(args):
 
 def adjust_learning_rate(args, optimizer, loader, step):
     max_steps = args.epochs * len(loader)
-    warmup_steps = 10 * len(loader)
+    warmup_epochs = max(1, int(0.1 * args.epochs))  # e.g. 10% of training
+    warmup_steps = warmup_epochs * len(loader)
     base_lr = args.base_lr * args.batch_size / 256
     if step < warmup_steps:
         lr = base_lr * step / warmup_steps
