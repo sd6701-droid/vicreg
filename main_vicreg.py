@@ -134,7 +134,7 @@ def main(args):
                 entity=args.wandb_entity,
                 name=args.wandb_name,
                 config=vars(args),
-                dir=args.output_dir,
+                dir=str(args.exp_dir),
             )
 
     transforms = aug.TrainTransform()
