@@ -47,7 +47,7 @@ python main_vicreg.py \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
   --wandb-name r101_cc3m_100k
-  --hsic-coeff 0.1
+  --hsic-coeff 0.0
 
 
 
