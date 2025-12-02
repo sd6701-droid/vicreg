@@ -36,7 +36,7 @@ echo "========================================"
 
 python main_vicreg.py \
   --data-dir /home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp \
-  --exp-dir /home/sd6701/fall2025_deeplearning/outputs/vicreg_cc3m_resnet50x2/100k_dataset \
+  --exp-dir /home/sd6701/fall2025_deeplearning/outputs/vicreg_cc3m_resnet50x2/100k_dataset/hsic \
   --arch resnet50x2 \
   --epochs 40 \
   --batch-size 64 \
@@ -47,6 +47,8 @@ python main_vicreg.py \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
   --wandb-name r101_cc3m_100k
+  --hsic-coeff 0.1
+
 
 
 echo "========================================"

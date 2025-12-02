@@ -108,8 +108,48 @@ def get_arguments():
         help="WandB API key (optional; better to set via env WANDB_API_KEY)",
     )
 
+    # HSIC extensions
+    parser.add_argument("--hsic-coeff", type=float, default=0.0,
+                        help="Coefficient for global HSIC term between views (VICReg+HSIC)")
+    parser.add_argument("--hsic-local-coeff", type=float, default=0.0,
+                        help="Coefficient for local HSIC term (requires local features; unused for now)")
+
 
     return parser
+
+
+
+def hsic_linear(x, y):
+    """
+    HSIC with linear kernel between two batches of features x, y.
+    x: [B, D], y: [B, D']
+    Returns a scalar HSIC estimate. Higher => stronger dependence.
+    """
+    # Use float32 for stability even in mixed precision
+    x = x.float()
+    y = y.float()
+
+    n = x.size(0)
+    if n <= 1:
+        return x.new_tensor(0.0)
+
+    # Center features
+    x = x - x.mean(dim=0, keepdim=True)
+    y = y - y.mean(dim=0, keepdim=True)
+
+    # Gram matrices (linear kernel)
+    K = x @ x.t()          # [n, n]
+    L = y @ y.t()          # [n, n]
+
+    # Centered Gram matrices
+    H = torch.eye(n, device=x.device, dtype=x.dtype) - (1.0 / n)
+    Kc = H @ K @ H
+    Lc = H @ L @ H
+
+    # Normalized HSIC (unbiased up to a constant, not important since we scale it)
+    hsic = (Kc * Lc).sum() / ((n - 1) ** 2)
+    return hsic
+
 
 
 def main(args):
@@ -275,37 +315,38 @@ class VICReg(nn.Module):
         self.distributed = getattr(args, "distributed", False)
 
 
-    def forward(self, x, y):
-        x = self.projector(self.backbone(x))
-        y = self.projector(self.backbone(y))
+        def forward(self, x, y):
+            x = self.projector(self.backbone(x))
+            y = self.projector(self.backbone(y))
 
-        repr_loss = F.mse_loss(x, y)
+            repr_loss = F.mse_loss(x, y)
 
-        if not self.distributed:
-            x = x
-            y = y
-        else:
-            x = torch.cat(FullGatherLayer.apply(x), dim=0)
-            y = torch.cat(FullGatherLayer.apply(y), dim=0)
-        x = x - x.mean(dim=0)
-        y = y - y.mean(dim=0)
+            if not self.distributed:
+                x = x
+                y = y
+            else:
+                x = torch.cat(FullGatherLayer.apply(x), dim=0)
+                y = torch.cat(FullGatherLayer.apply(y), dim=0)
+            x = x - x.mean(dim=0)
+            y = y - y.mean(dim=0)
 
-        std_x = torch.sqrt(x.var(dim=0) + 0.0001)
-        std_y = torch.sqrt(y.var(dim=0) + 0.0001)
-        std_loss = torch.mean(F.relu(1 - std_x)) / 2 + torch.mean(F.relu(1 - std_y)) / 2
+            std_x = torch.sqrt(x.var(dim=0) + 0.0001)
+            std_y = torch.sqrt(y.var(dim=0) + 0.0001)
+            std_loss = torch.mean(F.relu(1 - std_x)) / 2 + torch.mean(F.relu(1 - std_y)) / 2
 
-        cov_x = (x.T @ x) / (self.args.batch_size - 1)
-        cov_y = (y.T @ y) / (self.args.batch_size - 1)
-        cov_loss = off_diagonal(cov_x).pow_(2).sum().div(
-            self.num_features
-        ) + off_diagonal(cov_y).pow_(2).sum().div(self.num_features)
+            cov_x = (x.T @ x) / (self.args.batch_size - 1)
+            cov_y = (y.T @ y) / (self.args.batch_size - 1)
+            cov_loss = off_diagonal(cov_x).pow_(2).sum().div(
+                self.num_features
+            ) + off_diagonal(cov_y).pow_(2).sum().div(self.num_features)
 
-        loss = (
-            self.args.sim_coeff * repr_loss
-            + self.args.std_coeff * std_loss
-            + self.args.cov_coeff * cov_loss
-        )
-        return loss
+            loss = (
+                self.args.sim_coeff * repr_loss
+                + self.args.std_coeff * std_loss
+                + self.args.cov_coeff * cov_loss
+            )
+            return loss
+
 
 
 def Projector(args, embedding):
