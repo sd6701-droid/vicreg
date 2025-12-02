@@ -108,6 +108,25 @@ def get_arguments():
         help="WandB API key (optional; better to set via env WANDB_API_KEY)",
     )
 
+        # Local VICRegL-style loss
+    parser.add_argument(
+        "--use-local-loss",
+        action="store_true",
+        help="Enable local VICReg loss on feature maps (VICRegL-style)",
+    )
+    parser.add_argument(
+        "--local-loss-weight",
+        type=float,
+        default=1.0,
+        help="Weight for the local VICReg loss term",
+    )
+    parser.add_argument(
+        "--local-mlp",
+        type=str,
+        default=None,
+        help="MLP spec for local projector (e.g. '2048-2048'); if None, reuse --mlp",
+    )
+
 
     return parser
 
@@ -262,7 +281,6 @@ def adjust_learning_rate(args, optimizer, loader, step):
         param_group["lr"] = lr
     return lr
 
-
 class VICReg(nn.Module):
     def __init__(self, args):
         super().__init__()
@@ -272,33 +290,50 @@ class VICReg(nn.Module):
             zero_init_residual=True
         )
         self.projector = Projector(args, self.embedding)
+        self.use_local = getattr(args, "use_local_loss", False)
+        self.local_loss_weight = getattr(args, "local_loss_weight", 1.0)
+        if self.use_local:
+            local_mlp = args.local_mlp if args.local_mlp is not None else args.mlp
+            self.local_projector = Projector(args, self.embedding, mlp_string=local_mlp)
+        else:
+            self.local_projector = None
+
         self.distributed = getattr(args, "distributed", False)
 
-
-    def forward(self, x, y):
-        x = self.projector(self.backbone(x))
-        y = self.projector(self.backbone(y))
+    def _vicreg_loss(self, x, y):
+        """
+        Core VICReg loss (invariance + variance + covariance) on two embeddings.
+        x, y: [N, D]
+        """
+        # your original structure, but slightly safer numerics
+        x = x.float()
+        y = y.float()
 
         repr_loss = F.mse_loss(x, y)
 
-        if not self.distributed:
-            x = x
-            y = y
-        else:
+        if self.distributed:
             x = torch.cat(FullGatherLayer.apply(x), dim=0)
             y = torch.cat(FullGatherLayer.apply(y), dim=0)
-        x = x - x.mean(dim=0)
-        y = y - y.mean(dim=0)
 
-        std_x = torch.sqrt(x.var(dim=0) + 0.0001)
-        std_y = torch.sqrt(y.var(dim=0) + 0.0001)
-        std_loss = torch.mean(F.relu(1 - std_x)) / 2 + torch.mean(F.relu(1 - std_y)) / 2
+        x = x - x.mean(dim=0, keepdim=True)
+        y = y - y.mean(dim=0, keepdim=True)
 
-        cov_x = (x.T @ x) / (self.args.batch_size - 1)
-        cov_y = (y.T @ y) / (self.args.batch_size - 1)
-        cov_loss = off_diagonal(cov_x).pow_(2).sum().div(
-            self.num_features
-        ) + off_diagonal(cov_y).pow_(2).sum().div(self.num_features)
+        std_x = torch.sqrt(x.var(dim=0, unbiased=False) + 1e-4)
+        std_y = torch.sqrt(y.var(dim=0, unbiased=False) + 1e-4)
+        std_loss = (
+            torch.mean(F.relu(1 - std_x)) / 2
+            + torch.mean(F.relu(1 - std_y)) / 2
+        )
+
+        batch_size = x.size(0)
+        denom = max(batch_size - 1, 1)  # avoid divide by 0
+
+        cov_x = (x.T @ x) / denom
+        cov_y = (y.T @ y) / denom
+        cov_loss = (
+            off_diagonal(cov_x).pow_(2).sum().div(self.num_features)
+            + off_diagonal(cov_y).pow_(2).sum().div(self.num_features)
+        )
 
         loss = (
             self.args.sim_coeff * repr_loss
@@ -307,9 +342,45 @@ class VICReg(nn.Module):
         )
         return loss
 
+    def forward(self, x, y):
+        # ---- GLOBAL BRANCH ----
+        if self.use_local:
+            # get global pooled features + feature maps
+            g_x, fmap_x = self.backbone(x, return_featmap=True)
+            g_y, fmap_y = self.backbone(y, return_featmap=True)
+        else:
+            g_x = self.backbone(x)
+            g_y = self.backbone(y)
+            fmap_x = fmap_y = None
 
-def Projector(args, embedding):
-    mlp_spec = f"{embedding}-{args.mlp}"
+        z_x = self.projector(g_x)
+        z_y = self.projector(g_y)
+
+        global_loss = self._vicreg_loss(z_x, z_y)
+
+        # ---- LOCAL BRANCH (optional, VICRegL-style) ----
+        if self.use_local and self.local_projector is not None:
+            # fmap_x, fmap_y: [B, C, H, W]
+            B, C, H, W = fmap_x.shape
+
+            # flatten spatial positions into "local samples"
+            lx = fmap_x.permute(0, 2, 3, 1).reshape(B * H * W, C)
+            ly = fmap_y.permute(0, 2, 3, 1).reshape(B * H * W, C)
+
+            lx = self.local_projector(lx)
+            ly = self.local_projector(ly)
+
+            local_loss = self._vicreg_loss(lx, ly)
+            loss = global_loss + self.local_loss_weight * local_loss
+        else:
+            loss = global_loss
+
+        return loss
+
+def Projector(args, embedding, mlp_string: str | None = None):
+    if mlp_string is None:
+        mlp_string = args.mlp
+    mlp_spec = f"{embedding}-{mlp_string}"
     layers = []
     f = list(map(int, mlp_spec.split("-")))
     for i in range(len(f) - 2):

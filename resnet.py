@@ -279,7 +279,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, return_featmap: bool = False):
         x = self.padding(x)
 
         x = self.conv1(x)
@@ -291,9 +291,13 @@ class ResNet(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
 
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
+        featmap = x  # [B, C, H, W] local feature map
 
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)  # [B, D] global feature
+
+        if return_featmap:
+            return x, featmap
         return x
 
 
