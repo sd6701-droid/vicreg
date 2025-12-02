@@ -36,17 +36,21 @@ echo "========================================"
 
 python main_vicreg.py \
   --data-dir /home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp \
-  --exp-dir /home/sd6701/fall2025_deeplearning/outputs/vicreg_cc3m_resnet50x2/100k_dataset/glo_loc \
-  --arch resnet50x2 \
-  --epochs 40 \
+  --exp-dir /home/sd6701/fall2025_deeplearning/outputs/vicreg_cc3m_resnet101_viewmix \
+  --arch resnet101 \
+  --epochs 30 \
   --batch-size 64 \
-  --base-lr 0.25 \
-  --log-freq-time 5 \
+  --base-lr 0.1 \
+  --log-freq-time 10 \
   --device cuda \
-  --enable-wandb \
-  --wandb-project dl_final_vicreg \
-  --wandb-entity sd6701-new-york-university \
-  --wandb-name r101_cc3m_100k
+  --use-local-loss \
+  --local-loss-weight 0.25 \
+  --local-mlp 2048-1024 \
+  --use-viewmix \
+  --viewmix-alpha 1.0 \
+  --viewmix-prob 0.5 \
+  --enable-wandb
+
 
 
 echo "========================================"
