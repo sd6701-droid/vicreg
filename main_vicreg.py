@@ -126,9 +126,51 @@ def get_arguments():
         default=None,
         help="MLP spec for local projector (e.g. '2048-2048'); if None, reuse --mlp",
     )
+        # ViewMix augmentation
+    parser.add_argument(
+        "--use-viewmix",
+        action="store_true",
+        help="Enable ViewMix-style mixing between the two augmented views.",
+    )
+    parser.add_argument(
+        "--viewmix-alpha",
+        type=float,
+        default=1.0,
+        help="Alpha parameter for Beta distribution in ViewMix (λ ~ Beta(alpha, alpha)).",
+    )
+    parser.add_argument(
+        "--viewmix-prob",
+        type=float,
+        default=0.5,
+        help="Probability of applying ViewMix to a given batch.",
+    )
 
 
     return parser
+
+
+def apply_viewmix(x, y, alpha: float = 1.0, p: float = 0.5):
+    """
+    ViewMix-style augmentation: mix the two augmented views (x, y) of the same images.
+
+    x, y: [B, C, H, W]
+    alpha: Beta(alpha, alpha) parameter
+    p: probability of applying ViewMix to the whole batch
+    """
+    if p <= 0.0 or alpha <= 0.0:
+        return x, y
+
+    if torch.rand(1).item() > p:
+        return x, y
+
+    B = x.size(0)
+    # λ per sample, broadcast over C, H, W
+    beta_dist = torch.distributions.Beta(alpha, alpha)
+    lam = beta_dist.sample((B, 1, 1, 1)).to(x.device)
+
+    x_mix = lam * x + (1.0 - lam) * y
+    y_mix = lam * y + (1.0 - lam) * x
+    return x_mix, y_mix
 
 
 def main(args):
@@ -148,7 +190,7 @@ def main(args):
         if args.enable_wandb :
             if args.wandb_api_key:
                 wandb.login(key=args.wandb_api_key)
-            wandb.init(
+            wandb_run = wandb.init(
                 project=args.wandb_project,
                 entity=args.wandb_entity,
                 name=args.wandb_name,
@@ -221,6 +263,14 @@ def main(args):
             y = y.cuda(gpu, non_blocking=True)
             # x = x.to("cpu")
             # y = y.to("cpu")
+
+            if getattr(args, "use_viewmix", False):
+                x, y = apply_viewmix(
+                    x,
+                    y,
+                    alpha=getattr(args, "viewmix_alpha", 1.0),
+                    p=getattr(args, "viewmix_prob", 0.5),
+                )
 
             lr = adjust_learning_rate(args, optimizer, loader, step)
 
