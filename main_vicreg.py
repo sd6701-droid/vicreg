@@ -315,37 +315,47 @@ class VICReg(nn.Module):
         self.distributed = getattr(args, "distributed", False)
 
 
-        def forward(self, x, y):
-            x = self.projector(self.backbone(x))
-            y = self.projector(self.backbone(y))
+    def forward(self, x, y):
+        # Projected embeddings
+        x = self.projector(self.backbone(x))
+        y = self.projector(self.backbone(y))
 
-            repr_loss = F.mse_loss(x, y)
+        # 1) Invariance (same as original VICReg)
+        repr_loss = F.mse_loss(x, y)
 
-            if not self.distributed:
-                x = x
-                y = y
-            else:
-                x = torch.cat(FullGatherLayer.apply(x), dim=0)
-                y = torch.cat(FullGatherLayer.apply(y), dim=0)
-            x = x - x.mean(dim=0)
-            y = y - y.mean(dim=0)
+        # 2) Optionally gather across DDP (you have distributed=False right now)
+        if self.distributed:
+            x = torch.cat(FullGatherLayer.apply(x), dim=0)
+            y = torch.cat(FullGatherLayer.apply(y), dim=0)
 
-            std_x = torch.sqrt(x.var(dim=0) + 0.0001)
-            std_y = torch.sqrt(y.var(dim=0) + 0.0001)
-            std_loss = torch.mean(F.relu(1 - std_x)) / 2 + torch.mean(F.relu(1 - std_y)) / 2
+        # Save copies for HSIC before centering if you want; here it's fine after centering too
+        x_centered = x - x.mean(dim=0)
+        y_centered = y - y.mean(dim=0)
 
-            cov_x = (x.T @ x) / (self.args.batch_size - 1)
-            cov_y = (y.T @ y) / (self.args.batch_size - 1)
-            cov_loss = off_diagonal(cov_x).pow_(2).sum().div(
-                self.num_features
-            ) + off_diagonal(cov_y).pow_(2).sum().div(self.num_features)
+        # 3) Variance term
+        std_x = torch.sqrt(x_centered.var(dim=0) + 0.0001)
+        std_y = torch.sqrt(y_centered.var(dim=0) + 0.0001)
+        std_loss = torch.mean(F.relu(1 - std_x)) / 2 + torch.mean(F.relu(1 - std_y)) / 2
 
-            loss = (
-                self.args.sim_coeff * repr_loss
-                + self.args.std_coeff * std_loss
-                + self.args.cov_coeff * cov_loss
-            )
-            return loss
+        # 4) Covariance term
+        cov_x = (x_centered.T @ x_centered) / (self.args.batch_size - 1)
+        cov_y = (y_centered.T @ y_centered) / (self.args.batch_size - 1)
+        cov_loss = off_diagonal(cov_x).pow_(2).sum().div(self.num_features) \
+                 + off_diagonal(cov_y).pow_(2).sum().div(self.num_features)
+
+        # 5) Global HSIC between the two views
+        hsic = hsic_linear(x_centered, y_centered)
+
+        # We want to MAXIMIZE HSIC, so we MINIMIZE (-hsic)
+        hsic_term = - self.args.hsic_coeff * hsic
+
+        loss = (
+            self.args.sim_coeff * repr_loss
+            + self.args.std_coeff * std_loss
+            + self.args.cov_coeff * cov_loss
+            + hsic_term
+        )
+        return loss
 
 
 
