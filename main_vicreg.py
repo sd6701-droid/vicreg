@@ -98,7 +98,7 @@ def get_arguments():
     parser.add_argument(
         "--wandb-name",
         type=str,
-        default="vicregr101-100k",
+        default="vicregr50x2-full_dataset",
         help="WandB run name (optional)",
     )
     parser.add_argument(
@@ -149,7 +149,7 @@ def get_arguments():
     return parser
 
 
-def apply_viewmix(x, y, alpha: float = 1.0, p: float = 0.5):
+def apply_viewmix(x, y, alpha: float = 0.5, p: float = 0.5):
     """
     ViewMix-style augmentation: mix the two augmented views (x, y) of the same images.
 
@@ -268,7 +268,7 @@ def main(args):
                 x, y = apply_viewmix(
                     x,
                     y,
-                    alpha=getattr(args, "viewmix_alpha", 1.0),
+                    alpha=getattr(args, "viewmix_alpha", 0.5),
                     p=getattr(args, "viewmix_prob", 0.5),
                 )
 
