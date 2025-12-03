@@ -8,7 +8,7 @@
 #SBATCH --mem=8G
 #SBATCH --time=08:00:00
 #SBATCH --account=csci_ga_2572-2025fa
-#SBATCH --partition=c12m85
+#SBATCH --partition=interactive
 
 set -euo pipefail
 
