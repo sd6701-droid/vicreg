@@ -10,7 +10,6 @@
 #SBATCH --partition=interactive
 #SBATCH --account=csci_ga_2572-2025fa
 
-set -euo pipefail
 
 echo "========================================"
 echo "Job started at: $(date)"
