@@ -36,9 +36,9 @@ echo "========================================"
 
 python main_vicreg.py \
   --data-dir /home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp \
-  --exp-dir /home/sd6701/fall2025_deeplearning/outputs/vicreg_cc3m_resnet101_viewmix \
-  --arch resnet101 \
-  --epochs 30 \
+  --exp-dir /home/sd6701/fall2025_deeplearning/outputs/vicreg_cc3m_resnet50x2_viewmix \
+  --arch resnet50x2 \
+  --epochs 400 \
   --batch-size 64 \
   --base-lr 0.1 \
   --log-freq-time 10 \
