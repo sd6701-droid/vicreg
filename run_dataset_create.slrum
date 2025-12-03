@@ -10,7 +10,6 @@
 #SBATCH --account=csci_ga_2572-2025fa
 #SBATCH --partition=interactive
 
-set -euo pipefail
 
 mkdir -p /home/sd6701/fall2025_deeplearning/logs
 
