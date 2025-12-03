@@ -1,0 +1,32 @@
+#!/bin/bash
+#SBATCH --job-name=dataset-create
+#SBATCH --output=/home/sd6701/fall2025_deeplearning/logs/dataset_create-%j.out
+#SBATCH --error=/home/sd6701/fall2025_deeplearning/logs/dataset_create-%j.err
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=80G
+#SBATCH --time=08:00:00
+#SBATCH --partition=c12m85
+#SBATCH --account=csci_ga_2572-2025fa
+
+set -euo pipefail
+
+echo "========================================"
+echo "Job started at: $(date)"
+echo "Node: $(hostname)"
+echo "========================================"
+
+# (optional) ensure logs dir exists
+mkdir -p /home/sd6701/fall2025_deeplearning/logs
+
+# Enable conda (edit env name if needed)
+source /home/sd6701/miniconda3/etc/profile.d/conda.sh
+conda activate vicreg
+
+# Run CPU python script
+python -u dataset_create.py
+
+echo "========================================"
+echo "Finished at: $(date)"
+echo "========================================"

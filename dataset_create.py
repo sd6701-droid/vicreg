@@ -30,7 +30,7 @@ print(f"✅ Train images: {len(train_imgs)}, Validation images: {len(val_imgs)}"
 # ----------------------------
 # 3️⃣ Create VicReg folder structure
 # ----------------------------
-base_dir = Path("/home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp")
+base_dir = Path("/home/sd6701/datasets/fall2025_deeplearning/dl_dataset_full_vicreg")
 train_dir = base_dir / "train" / "class1"
 val_dir = base_dir / "val" / "class1"
 train_dir.mkdir(parents=True, exist_ok=True)
