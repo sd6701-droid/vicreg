@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=vicreg-r101-96
+#SBATCH --job-name=vicreg-l50-96
 #SBATCH --output=/home/sd6701/fall2025_deeplearning/logs/vicreg_r101-%j.out
 #SBATCH --error=/home/sd6701/fall2025_deeplearning/logs/vicreg_r101-%j.err
 #SBATCH --nodes=1

@@ -13,7 +13,7 @@ print("🚀 Starting VicReg dataset preparation")
 dataset_dir = Path("/home/sd6701/datasets/fall2025_deeplearning/cc3m_96px")
 
 # Collect all image files (jpg, png)
-all_images = [p for p in dataset_dir.rglob("*") if p.suffix.lower() in [".jpg", ".png"]][:100000]
+all_images = [p for p in dataset_dir.rglob("*") if p.suffix.lower() in [".jpg", ".png"]]
 
 
 print(f"✅ Total images selected: {len(all_images)}")
