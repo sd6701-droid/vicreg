@@ -4,7 +4,7 @@
 #SBATCH --error=/home/sd6701/fall2025_deeplearning/logs/dataset_create-%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=1
 #SBATCH --mem=80G
 #SBATCH --time=08:00:00
 #SBATCH --partition=interactive
