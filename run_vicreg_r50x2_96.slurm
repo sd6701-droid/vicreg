@@ -36,7 +36,7 @@ echo "========================================"
 
 python main_vicreg.py \
   --data-dir /home/sd6701/datasets/fall2025_deeplearning/dl_dataset_full_vicreg \
-  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v3/ \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v7/ \
   --arch resnet50x2 \
   --epochs 450 \
   --batch-size 512 \
