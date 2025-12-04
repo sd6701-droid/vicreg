@@ -35,7 +35,6 @@ echo "========================================"
 
 
 python main_vicreg.py \
-  --data-dir /home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp \
   --use-hf-dataset \
   --hf-dataset-name tsbpp/fall2025_deeplearning \
   --hf-dataset-split train \
@@ -46,7 +45,7 @@ python main_vicreg.py \
   --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet100_v6/ \
   --arch resnet101 \
   --epochs 300 \
-  --batch-size 512 \
+  --batch-size 1024 \
   --base-lr 0.25 \
   --log-freq-time 5 \
   --device cuda \
