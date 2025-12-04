@@ -36,7 +36,7 @@ echo "========================================"
 
 python main_vicreg.py \
   --data-dir /home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp \
-  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet101_v2/ \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet101_v3/ \
   --arch resnet101 \
   --epochs 40 \
   --batch-size 512 \
@@ -46,11 +46,11 @@ python main_vicreg.py \
   --enable-wandb \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
-  --wandb-name r50_augs_glo_loc_v2
+  --wandb-name r50_augs_glo_loc_v3
   --mlp 2048-2048-1024 \
   --use-local-loss \
   --local-mlp 1024-512 \
-  --local-loss-weight 0.25
+  --local-loss-weight 0.2
 
 
 
