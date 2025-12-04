@@ -36,7 +36,7 @@ echo "========================================"
 
 python main_vicreg.py \
   --data-dir /home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp \
-  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v1/ \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v2/ \
   --arch resnet50x2 \
   --epochs 40 \
   --batch-size 256 \
@@ -47,6 +47,8 @@ python main_vicreg.py \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
   --wandb-name r101_cc3m_100k
+  --mlp 2048-1024
+
 
 
 echo "========================================"
