@@ -129,7 +129,7 @@ def main(args):
         if args.enable_wandb :
             if args.wandb_api_key:
                 wandb.login(key=args.wandb_api_key)
-            wandb.init(
+            wandb_run = wandb.init(
                 project=args.wandb_project,
                 entity=args.wandb_entity,
                 name=args.wandb_name,
