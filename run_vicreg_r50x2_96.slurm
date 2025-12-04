@@ -11,6 +11,8 @@
 #SBATCH --partition=c12m85-a100-1  # change if you use a different partition
 #SBATCH --account=csci_ga_2572-2025fa
 
+
+
 echo "========================================"
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $SLURMD_NODENAME"s
@@ -35,10 +37,10 @@ echo "========================================"
 
 
 python main_vicreg.py \
-  --data-dir /home/sd6701/datasets/fall2025_deeplearning/dl_dataset_full_vicreg \
-  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v7/ \
+  --data-dir /home/sd6701/datasets/dl_vicreg_final_exp_dataset_v2/all_images/train/ \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v10/ \
   --arch resnet50x2 \
-  --epochs 450 \
+  --epochs 500 \
   --batch-size 512 \
   --base-lr 0.25 \
   --log-freq-time 5 \
@@ -46,7 +48,7 @@ python main_vicreg.py \
   --enable-wandb \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
-  --wandb-name r50_augs_glo_loc_450eph_v7
+  --wandb-name r50_augs_glo_loc_10
   --mlp 2048-2048-1024 \
   --use-local-loss \
   --local-mlp 1024-512 \
