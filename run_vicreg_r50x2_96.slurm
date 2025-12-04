@@ -45,7 +45,7 @@ python main_vicreg.py \
   --hf-image-key2 image \
   --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v5/ \
   --arch resnet50x2 \
-  --epochs 5 \
+  --epochs 300 \
   --batch-size 512 \
   --base-lr 0.25 \
   --log-freq-time 5 \
