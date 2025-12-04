@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=vicreg-l50-96
+#SBATCH --job-name=vicreg-r101-96
 #SBATCH --output=/home/sd6701/fall2025_deeplearning/logs/vicreg_r101-%j.out
 #SBATCH --error=/home/sd6701/fall2025_deeplearning/logs/vicreg_r101-%j.err
 #SBATCH --nodes=1
@@ -36,21 +36,17 @@ echo "========================================"
 
 python main_vicreg.py \
   --data-dir /home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp \
-  --exp-dir /home/sd6701/fall2025_deeplearning/outputs/vicreg_cc3m_resnet50x2_viewmix \
-  --arch resnet50x2 \
-  --epochs 30 \
-  --batch-size 64 \
-  --base-lr 0.1 \
-  --log-freq-time 10 \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50_v1/ \
+  --arch resnet50 \
+  --epochs 40 \
+  --batch-size 256 \
+  --base-lr 0.25 \
+  --log-freq-time 5 \
   --device cuda \
-  --use-local-loss \
-  --local-loss-weight 0.25 \
-  --local-mlp 2048-1024 \
-  --use-viewmix \
-  --viewmix-alpha 1.0 \
-  --viewmix-prob 0.5 \
-  --enable-wandb
-
+  --enable-wandb \
+  --wandb-project dl_final_vicreg \
+  --wandb-entity sd6701-new-york-university \
+  --wandb-name r101_cc3m_100k
 
 
 echo "========================================"
