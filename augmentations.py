@@ -76,7 +76,7 @@ class TrainTransform(object):
         self.transform2 = transforms.Compose([
             self.base_transform,
             GaussianBlur(p=0.1),
-            Solarization(p=0.2),
+            Solarization(p=0.0),
             transforms.ToTensor(),
             normalize,
         ])
