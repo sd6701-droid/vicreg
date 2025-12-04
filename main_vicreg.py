@@ -27,6 +27,39 @@ from distributed import init_distributed_mode
 
 import resnet
 
+from datasets import load_dataset as hf_load_dataset
+from torch.utils.data import Dataset, ConcatDataset
+from PIL import Image
+import io
+
+
+class HFImageDataset(Dataset):
+    """
+    Wrap a Hugging Face image dataset to look like torchvision.ImageFolder
+    for VICReg:
+      - __getitem__ returns ( (x, y), label )
+      - label is dummy (0), since SSL doesn't use labels
+    """
+    def __init__(self, hf_dataset, transform, image_key: str = "image"):
+        self.hf_dataset = hf_dataset
+        self.transform = transform
+        self.image_key = image_key
+
+    def __len__(self):
+        return len(self.hf_dataset)
+
+    def __getitem__(self, idx):
+        sample = self.hf_dataset[idx]
+        img = sample[self.image_key]
+
+        # Usually HF Datasets returns a PIL.Image if the column is of type "Image".
+        # Fallback: if it's a dict with bytes.
+        if isinstance(img, dict) and "bytes" in img:
+            img = Image.open(io.BytesIO(img["bytes"])).convert("RGB")
+
+        views = self.transform(img)   # aug.TrainTransform() returns (view1, view2)
+        return views, 0               # ( (x, y), dummy_label )
+
 
 def get_arguments():
     parser = argparse.ArgumentParser(description="Pretrain a resnet model with VICReg", add_help=False)
@@ -145,6 +178,51 @@ def get_arguments():
         help="Probability of applying ViewMix to a given batch.",
     )
 
+        # Hugging Face dataset options
+    parser.add_argument(
+        "--use-hf-dataset",
+        action="store_true",
+        help="Load training images from one or more Hugging Face datasets instead of a local ImageFolder.",
+    )
+    parser.add_argument(
+        "--hf-dataset-name",
+        type=str,
+        default="tsbpp/fall2025_deeplearning",
+        help="Primary HF dataset name (e.g. 'tsbpp/fall2025_deeplearning').",
+    )
+    parser.add_argument(
+        "--hf-dataset-split",
+        type=str,
+        default="train",
+        help="Split name for the primary HF dataset (default: 'train').",
+    )
+    parser.add_argument(
+        "--hf-image-key",
+        type=str,
+        default="image",
+        help="Column key for the image in the primary HF dataset (usually 'image').",
+    )
+
+    # Optional SECOND HF dataset (e.g. sm12377/tr_imgs)
+    parser.add_argument(
+        "--hf-dataset-name2",
+        type=str,
+        default=None,
+        help="Optional second HF dataset name (e.g. 'sm12377/tr_imgs'). If None, only the first is used.",
+    )
+    parser.add_argument(
+        "--hf-dataset-split2",
+        type=str,
+        default="train",
+        help="Split name for the second HF dataset (default: 'train').",
+    )
+    parser.add_argument(
+        "--hf-image-key2",
+        type=str,
+        default="image",
+        help="Column key for the image in the second HF dataset (usually 'image').",
+    )
+
 
     return parser
 
@@ -200,7 +278,41 @@ def main(args):
 
     transforms = aug.TrainTransform()
 
-    dataset = datasets.ImageFolder(args.data_dir / "train", transforms)
+    if getattr(args, "use_hf_dataset", False):
+        # ---- HF DATASETS BRANCH ----
+        datasets_list = []
+
+        # 1) Primary HF dataset
+        print(f"Loading primary HF dataset: {args.hf_dataset_name} (split={args.hf_dataset_split})")
+        hf_ds1 = hf_load_dataset(args.hf_dataset_name, split=args.hf_dataset_split)
+        ds1 = HFImageDataset(
+            hf_dataset=hf_ds1,
+            transform=transforms,
+            image_key=args.hf_image_key,
+        )
+        datasets_list.append(ds1)
+
+        # 2) Optional second HF dataset
+        if args.hf_dataset_name2 is not None:
+            print(f"Loading secondary HF dataset: {args.hf_dataset_name2} (split={args.hf_dataset_split2})")
+            hf_ds2 = hf_load_dataset(args.hf_dataset_name2, split=args.hf_dataset_split2)
+            ds2 = HFImageDataset(
+                hf_dataset=hf_ds2,
+                transform=transforms,
+                image_key=args.hf_image_key2,
+            )
+            datasets_list.append(ds2)
+
+        # Concatenate all HF datasets into one big training set
+        if len(datasets_list) == 1:
+            dataset = datasets_list[0]
+        else:
+            dataset = ConcatDataset(datasets_list)
+            print(f"Using concatenated HF datasets, total samples: {len(dataset)}")
+
+    else:
+        # ---- ORIGINAL ImageFolder BRANCH ----
+        dataset = datasets.ImageFolder(args.data_dir / "train", transforms)
 
     if args.world_size > 1:
       sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=True)
