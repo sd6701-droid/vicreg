@@ -43,9 +43,9 @@ python main_vicreg.py \
   --hf-dataset-name2 sm12377/tr_imgs \
   --hf-dataset-split2 train \
   --hf-image-key2 image \
-  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v3/ \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v4/ \
   --arch resnet50x2 \
-  --epochs 40 \
+  --epochs 5 \
   --batch-size 512 \
   --base-lr 0.25 \
   --log-freq-time 5 \
