@@ -46,7 +46,7 @@ python main_vicreg.py \
   --enable-wandb \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
-  --wandb-name r101_cc3m_100k
+  --wandb-name r50_augs_glo_loc
 
 
 echo "========================================"

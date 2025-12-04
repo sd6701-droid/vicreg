@@ -3,7 +3,6 @@ import numpy as np
 import torchvision.transforms as transforms
 from torchvision.transforms import InterpolationMode
 
-
 class GaussianBlur(object):
     """
     Apply Gaussian Blur to the PIL image with probability p.
@@ -33,28 +32,17 @@ class Solarization(object):
         else:
             return img
 
-
 class TrainTransform(object):
-    """
-    Data augmentations for VICReg.
-
-    Returns: (view1, view2)
-    Both are 96x96 crops with strong color + blur + (optional) solarization.
-    """
     def __init__(self, size=96, s=1.0):
-        # ---- Color jitter + grayscale (what you already had) ----
         color_jitter = transforms.ColorJitter(
-            0.8 * s,  # brightness
-            0.8 * s,  # contrast
-            0.8 * s,  # saturation
-            0.2 * s,  # hue
+            0.8 * s,
+            0.8 * s,
+            0.8 * s,
+            0.2 * s,
         )
         rnd_color_jitter = transforms.RandomApply([color_jitter], p=0.8)
         rnd_gray = transforms.RandomGrayscale(p=0.2)
 
-        # ---- Common spatial transforms ----
-        # For 96x96 images, a scale of (0.2, 1.0) is usually safe.
-        # If crops look too small, you can change to (0.3, 1.0).
         self.base_transform = transforms.Compose([
             transforms.RandomResizedCrop(
                 size,
@@ -62,17 +50,22 @@ class TrainTransform(object):
                 interpolation=InterpolationMode.BICUBIC,
             ),
             transforms.RandomHorizontalFlip(p=0.5),
+
+            # >>> added small random rotations <<<
+            transforms.RandomApply(
+                [transforms.RandomRotation(degrees=10)],
+                p=0.3,   # don’t rotate every image
+            ),
+
             rnd_color_jitter,
             rnd_gray,
         ])
 
-        # Normalization (ImageNet stats – standard for ResNet backbones)
         normalize = transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225],
         )
 
-        # ---- View 1: strong blur, no solarization ----
         self.transform1 = transforms.Compose([
             self.base_transform,
             GaussianBlur(p=1.0),
@@ -80,7 +73,6 @@ class TrainTransform(object):
             normalize,
         ])
 
-        # ---- View 2: weaker blur + some solarization ----
         self.transform2 = transforms.Compose([
             self.base_transform,
             GaussianBlur(p=0.1),
