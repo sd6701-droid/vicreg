@@ -47,6 +47,11 @@ python main_vicreg.py \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
   --wandb-name r50_augs_glo_loc_v2
+  --mlp 2048-2048-1024 \
+  --use-local-loss \
+  --local-mlp 1024-512 \
+  --local-loss-weight 0.25
+
 
 
 echo "========================================"
