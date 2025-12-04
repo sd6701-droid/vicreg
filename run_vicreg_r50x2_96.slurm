@@ -43,7 +43,7 @@ python main_vicreg.py \
   --hf-dataset-name2 sm12377/tr_imgs \
   --hf-dataset-split2 train \
   --hf-image-key2 image \
-  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v4/ \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v5/ \
   --arch resnet50x2 \
   --epochs 5 \
   --batch-size 512 \
@@ -53,7 +53,7 @@ python main_vicreg.py \
   --enable-wandb \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
-  --wandb-name r50_augs_glo_loc_v4 \
+  --wandb-name r50_augs_glo_loc_v5 \
   --mlp 2048-2048-1024 \
   --use-local-loss \
   --local-mlp 1024-512 \
