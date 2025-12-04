@@ -98,7 +98,7 @@ def get_arguments():
     parser.add_argument(
         "--wandb-name",
         type=str,
-        default="vicregr101-final_dt_v1",
+        default="vicregr101-final_dt_v2",
         help="WandB run name (optional)",
     )
     parser.add_argument(
