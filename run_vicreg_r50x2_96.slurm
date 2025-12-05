@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1               # or gpu:a100:1 if your cluster uses that syntax
 #SBATCH --mem=80G
-#SBATCH --time=48:00:00
+#SBATCH --time=12:00:00
 #SBATCH --partition=c12m85-a100-1  # change if you use a different partition
 #SBATCH --account=csci_ga_2572-2025fa
 
@@ -38,17 +38,17 @@ echo "========================================"
 
 python main_vicreg.py \
   --data-dir /home/sd6701/datasets/dl_vicreg_final_exp_dataset_v2/all_images/train/ \
-  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v10/ \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v13/ \
   --arch resnet50x2 \
   --epochs 500 \
-  --batch-size 512 \
+  --batch-size 2048 \
   --base-lr 0.25 \
   --log-freq-time 5 \
   --device cuda \
   --enable-wandb \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
-  --wandb-name r50_augs_glo_loc_10
+  --wandb-name r50_augs_glo_loc_13
   --mlp 2048-2048-1024 \
   --use-local-loss \
   --local-mlp 1024-512 \
