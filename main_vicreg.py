@@ -26,6 +26,43 @@ import augmentations as aug
 from distributed import init_distributed_mode
 
 import resnet
+from torchvision.datasets.folder import default_loader
+from torch.utils.data import Dataset
+import glob
+
+
+class FlatImageFolder(Dataset):
+    """
+    Simple dataset for a flat folder of images (no class subfolders).
+    Compatible with VICReg's TrainTransform, which returns (x, y).
+    """
+    def __init__(self, root, transform=None):
+        self.root = str(root)
+        self.transform = transform
+
+        # Collect image paths (extend list of extensions if needed)
+        exts = ("*.jpg", "*.jpeg", "*.png", "*.bmp", "*.tif", "*.tiff")
+        paths = []
+        for ext in exts:
+            paths.extend(glob.glob(os.path.join(self.root, ext)))
+        self.samples = sorted(paths)
+
+        if len(self.samples) == 0:
+            raise RuntimeError(f"No images found in {self.root}")
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, index):
+        path = self.samples[index]
+        img = default_loader(path)  # returns a PIL.Image in RGB
+
+        if self.transform is not None:
+            img = self.transform(img)   # for VICReg this returns (x, y)
+
+        target = 0  # dummy label, not used
+        return img, target
+
 
 
 def get_arguments():
@@ -139,7 +176,8 @@ def main(args):
 
     transforms = aug.TrainTransform()
 
-    dataset = datasets.ImageFolder(args.data_dir / "train", transforms)
+    dataset = FlatImageFolder(args.data_dir, transforms)
+
 
     if args.world_size > 1:
       sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=True)

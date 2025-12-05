@@ -35,18 +35,18 @@ echo "========================================"
 
 
 python main_vicreg.py \
-  --data-dir /home/sd6701/datasets/fall2025_deeplearning/cc3m_96px_vicreg_final_exp \
-  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v2/ \
+  --data-dir /home/sd6701/datasets/dl_vicreg_final_exp_dataset_v2/all_images/train \
+  --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v3/ \
   --arch resnet50x2 \
   --epochs 40 \
   --batch-size 256 \
-  --base-lr 0.25 \
+  --base-lr 0.275 \
   --log-freq-time 5 \
   --device cuda \
   --enable-wandb \
   --wandb-project dl_final_vicreg \
   --wandb-entity sd6701-new-york-university \
-  --wandb-name r50x2_cc3m_100k_v2
+  --wandb-name r50x2_cc3m_100k_v3
   --mlp 2048-1024
 
 
