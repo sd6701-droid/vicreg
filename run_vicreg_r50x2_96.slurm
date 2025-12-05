@@ -41,7 +41,7 @@ python main_vicreg.py \
   --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v13/ \
   --arch resnet50x2 \
   --epochs 500 \
-  --batch-size 2048 \
+  --batch-size 1024 \
   --base-lr 0.25 \
   --log-freq-time 5 \
   --device cuda \
