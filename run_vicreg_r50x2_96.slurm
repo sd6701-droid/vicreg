@@ -48,6 +48,7 @@ python main_vicreg.py \
   --wandb-entity sd6701-new-york-university \
   --wandb-name r50x2_cc3m_100k_v3
   --mlp 2048-1024
+  
 
 
 
