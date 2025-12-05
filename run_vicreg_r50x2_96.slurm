@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1               # or gpu:a100:1 if your cluster uses that syntax
 #SBATCH --mem=80G
-#SBATCH --time=10:00:00
+#SBATCH --time=12:00:00
 #SBATCH --partition=c12m85-a100-1  # change if you use a different partition
 #SBATCH --account=csci_ga_2572-2025fa
 
