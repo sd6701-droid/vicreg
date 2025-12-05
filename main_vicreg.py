@@ -55,14 +55,23 @@ class FlatImageFolder(Dataset):
 
     def __getitem__(self, index):
         path = self.samples[index]
-        img = default_loader(path)  # returns a PIL.Image in RGB
+        for _ in range(10):  # try up to 10 times to find a good image
+            try:
+                img = default_loader(path)
+                break
+            except (UnidentifiedImageError, OSError) as e:
+                print(f"[WARN] Skipping bad image: {path} ({e})")
+                # move index to next; wrap around if needed
+                index = (index + 1) % len(self.samples)
+                path = self.samples[index]
+        else:
+            # if we somehow looped 10 times and everything was bad, raise
+            raise RuntimeError("Too many corrupt images encountered in a row")
 
         if self.transform is not None:
-            img = self.transform(img)   # for VICReg this returns (x, y)
-
-        target = 0  # dummy label, not used
+            img = self.transform(img)
+        target = 0  # or whatever label logic you use
         return img, target
-
 
 
 def get_arguments():
