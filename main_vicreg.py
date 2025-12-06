@@ -31,6 +31,7 @@ from torch.utils.data import Dataset
 import glob
 from PIL import UnidentifiedImageError
 from torchvision.datasets.folder import default_loader
+from hf_dataset import HFDataset
 
 class FlatImageFolder(Dataset):
     """
@@ -80,8 +81,10 @@ def get_arguments():
     parser = argparse.ArgumentParser(description="Pretrain a resnet model with VICReg", add_help=False)
 
     # Data
-    parser.add_argument("--data-dir", type=Path, default="/path/to/imagenet", required=True,
+    parser.add_argument("--data-dir", type=Path, default="/path/to/imagenet", required=False,
                         help='Path to the image net dataset')
+    parser.add_argument("--hf-datasets", nargs='+', default=None,
+                        help='List of Hugging Face datasets to use (e.g. tsbpp/fall2025_deeplearning)')
 
     # Checkpoints
     parser.add_argument("--exp-dir", type=Path, default="./exp",
@@ -140,7 +143,7 @@ def get_arguments():
     parser.add_argument(
         "--wandb-entity",
         type=str,
-        default="sd6701-new-york-university",
+        default=None,
         help="WandB entity (team or username). If None, use your default account.",
     )
     parser.add_argument(
@@ -152,7 +155,7 @@ def get_arguments():
     parser.add_argument(
         "--wandb-api-key",
         type=str,
-        default="14abcf8b33d9a7f066dd1988891a00fec55f4030",  # <-- RECOMMENDED: don't hardcode here
+        default=None,
         help="WandB API key (optional; better to set via env WANDB_API_KEY)",
     )
 
@@ -162,7 +165,7 @@ def get_arguments():
 
 def main(args):
     torch.backends.cudnn.benchmark = True
-    # init_distributed_mode(args)
+    init_distributed_mode(args)
     print(args)
     gpu = torch.device(args.device)
 
@@ -187,7 +190,10 @@ def main(args):
 
     transforms = aug.TrainTransform()
 
-    dataset = FlatImageFolder(args.data_dir, transforms)
+    if args.hf_datasets:
+        dataset = HFDataset(args.hf_datasets, transforms)
+    else:
+        dataset = FlatImageFolder(args.data_dir, transforms)
 
 
     if args.world_size > 1:
@@ -472,7 +478,7 @@ def handle_sigterm(signum, frame):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('VICReg-training-script', parents=[get_arguments()])
     args = parser.parse_args()
-    args.distributed = False   # <<< ADD THIS LINE
+    # args.distributed = False   # <<< REMOVED
     if not hasattr(args, 'rank'):
         args.rank = 0
     print(f"Running VICReg with args: {args}")

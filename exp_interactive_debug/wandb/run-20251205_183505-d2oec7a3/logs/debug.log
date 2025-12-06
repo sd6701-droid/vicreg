@@ -1,0 +1,23 @@
+2025-12-05 18:35:05,679 INFO    MainThread:4123920 [wandb_setup.py:_flush():80] Current SDK version is 0.23.1
+2025-12-05 18:35:05,679 INFO    MainThread:4123920 [wandb_setup.py:_flush():80] Configure stats pid to 4123920
+2025-12-05 18:35:05,679 INFO    MainThread:4123920 [wandb_setup.py:_flush():80] Loading settings from /gpfs/home/aj4718/.config/wandb/settings
+2025-12-05 18:35:05,679 INFO    MainThread:4123920 [wandb_setup.py:_flush():80] Loading settings from /gpfs/data/shenlab/aj4718/vicreg/wandb/settings
+2025-12-05 18:35:05,680 INFO    MainThread:4123920 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2025-12-05 18:35:05,680 INFO    MainThread:4123920 [wandb_init.py:setup_run_log_directory():714] Logging user logs to exp_interactive_debug/wandb/run-20251205_183505-d2oec7a3/logs/debug.log
+2025-12-05 18:35:05,680 INFO    MainThread:4123920 [wandb_init.py:setup_run_log_directory():715] Logging internal logs to exp_interactive_debug/wandb/run-20251205_183505-d2oec7a3/logs/debug-internal.log
+2025-12-05 18:35:05,680 INFO    MainThread:4123920 [wandb_init.py:init():841] calling init triggers
+2025-12-05 18:35:05,680 INFO    MainThread:4123920 [wandb_init.py:init():846] wandb.init called with sweep_config: {}
+config: {'data_dir': PosixPath('/path/to/imagenet'), 'hf_datasets': ['tsbpp/fall2025_deeplearning', 'sm12377/tr_imgs:split=train'], 'exp_dir': PosixPath('exp_interactive_debug'), 'log_freq_time': 60, 'arch': 'resnet50x2', 'mlp': '8192-8192-8192', 'epochs': 100, 'batch_size': 256, 'base_lr': 0.2, 'wd': 1e-06, 'sim_coeff': 25.0, 'std_coeff': 25.0, 'cov_coeff': 1.0, 'num_workers': 4, 'device': 'cuda', 'world_size': 1, 'local_rank': -1, 'dist_url': 'env://', 'enable_wandb': True, 'wandb_project': 'vicreg-hf', 'wandb_entity': 'sd6701-new-york-university', 'wandb_name': 'interactive-debug', 'wandb_api_key': '14abcf8b33d9a7f066dd1988891a00fec55f4030', 'distributed': False, 'rank': 0, '_wandb': {}}
+2025-12-05 18:35:05,680 INFO    MainThread:4123920 [wandb_init.py:init():889] starting backend
+2025-12-05 18:35:07,248 INFO    MainThread:4123920 [wandb_init.py:init():892] sending inform_init request
+2025-12-05 18:35:07,285 INFO    MainThread:4123920 [wandb_init.py:init():900] backend started and connected
+2025-12-05 18:35:07,287 INFO    MainThread:4123920 [wandb_init.py:init():970] updated telemetry
+2025-12-05 18:35:07,337 INFO    MainThread:4123920 [wandb_init.py:init():994] communicating run to backend with 90.0 second timeout
+2025-12-05 18:35:07,905 INFO    MainThread:4123920 [wandb_init.py:init():1041] starting run threads in backend
+2025-12-05 18:35:08,629 INFO    MainThread:4123920 [wandb_run.py:_console_start():2521] atexit reg
+2025-12-05 18:35:08,629 INFO    MainThread:4123920 [wandb_run.py:_redirect():2369] redirect: wrap_raw
+2025-12-05 18:35:08,629 INFO    MainThread:4123920 [wandb_run.py:_redirect():2438] Wrapping output streams.
+2025-12-05 18:35:08,629 INFO    MainThread:4123920 [wandb_run.py:_redirect():2461] Redirects installed.
+2025-12-05 18:35:08,637 INFO    MainThread:4123920 [wandb_init.py:init():1081] run started, returning control to user process
+2025-12-05 18:45:26,338 INFO    wandb-AsyncioManager-main:4123920 [service_client.py:_forward_responses():80] Reached EOF.
+2025-12-05 18:45:26,339 INFO    wandb-AsyncioManager-main:4123920 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.

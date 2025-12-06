@@ -1,0 +1,2 @@
+main_vicreg.py --arch resnet50x2 --batch-size 256 --hf-datasets tsbpp/fall2025_deeplearning sm12377/tr_imgs:split=train --epochs 100 --exp-dir ./exp_interactive_debug --base-lr 0.2 --sim-coeff 25.0 --std-coeff 25.0 --cov-coeff 1.0 --num-workers 4 --enable-wandb --wandb-project vicreg-hf --wandb-name interactive-debug
+{"epoch": 0, "step": 0, "loss": 37.045372009277344, "time": 458, "lr": 0.0}

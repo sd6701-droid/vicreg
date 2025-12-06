@@ -1,0 +1,44 @@
+Loading tsbpp/fall2025_deeplearning split train...
+Loading sm12377/tr_imgs split train...
+Total samples: 1028114
+/gpfs/data/shenlab/aj4718/vicreg/main_vicreg.py:251: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler()
+/gpfs/data/shenlab/aj4718/vicreg/main_vicreg.py:264: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+{"epoch": 0, "step": 0, "loss": 37.045372009277344, "time": 458, "lr": 0.0}
+Traceback (most recent call last):
+  File "/gpfs/data/shenlab/aj4718/vicreg/main_vicreg.py", line 489, in <module>
+    main(args)
+  File "/gpfs/data/shenlab/aj4718/vicreg/main_vicreg.py", line 255, in main
+    for step, ((x, y), _) in enumerate(loader, start=epoch * len(loader)):
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+    data = self._next_data()
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1482, in _next_data
+    idx, data = self._get_data()
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1434, in _get_data
+    success, data = self._try_get_data()
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1275, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/queue.py", line 180, in get
+    self.not_empty.wait(remaining)
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/threading.py", line 324, in wait
+    gotit = waiter.acquire(True, timeout)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/gpfs/data/shenlab/aj4718/vicreg/main_vicreg.py", line 489, in <module>
+    main(args)
+  File "/gpfs/data/shenlab/aj4718/vicreg/main_vicreg.py", line 255, in main
+    for step, ((x, y), _) in enumerate(loader, start=epoch * len(loader)):
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+    data = self._next_data()
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1482, in _next_data
+    idx, data = self._get_data()
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1434, in _get_data
+    success, data = self._try_get_data()
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1275, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/queue.py", line 180, in get
+    self.not_empty.wait(remaining)
+  File "/gpfs/data/shenlab/aj4718/miniconda3/envs/vicreg_hf/lib/python3.10/threading.py", line 324, in wait
+    gotit = waiter.acquire(True, timeout)
+KeyboardInterrupt
