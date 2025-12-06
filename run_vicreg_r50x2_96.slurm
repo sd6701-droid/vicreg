@@ -38,7 +38,7 @@ python main_vicreg.py \
   --data-dir /home/sd6701/datasets/dl_vicreg_final_exp_dataset_v2/all_images/train \
   --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v15/ \
   --arch resnet34 \
-  --epochs 20 \
+  --epochs 200 \
   --batch-size 1024 \
   --base-lr 0.275 \
   --log-freq-time 5 \
