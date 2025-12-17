@@ -1,126 +1,173 @@
-# VICReg: Variance-Invariance-Covariance Regularization For Self-Supervised Learning
+# VICReg Pretraining (ResNet-50x2) on a Flat Image Folder (96×96)
 
-This repository provides a PyTorch implementation and pretrained models for VICReg, as described in the paper [VICReg: Variance-Invariance-Covariance Regularization For Self-Supervised Learning](https://arxiv.org/abs/2105.04906)\
-Adrien Bardes, Jean Ponce and Yann LeCun\
-Meta AI, Inria
+This repository trains a **VICReg** (Variance–Invariance–Covariance Regularization) self-supervised model on an **unlabeled flat folder of images** (no class subfolders required).
 
---- 
+Key features:
+- **ResNet backbones** (e.g., `resnet50x2`)
+- **Global VICReg loss** (invariance + variance + covariance)
+- Optional **Local (VICRegL-style) loss** on feature maps (`--use-local-loss`)
+- Optional **ViewMix** augmentation (implemented; disabled unless enabled)
+- **LARS** optimizer + **warmup + cosine** learning-rate schedule
+- Optional **Weights & Biases (W&B)** logging
 
-<!-- 
-<div align="center">
-  <img width="100%" alt="VICReg illustration" src=".github/vicreg_archi_full.jpg">
-</div> -->
+---
 
-<p align="center">
-<img src=".github/vicreg_archi_full.jpg" width=100% height=100% 
-class="center">
-</p>
+## Repository Layout
 
-## Pre-trained Models
+- `main_vicreg.py` — training script
+- `augmentations.py` — `TrainTransform` that generates two augmented views
+- `resnet.py` — backbone definitions (must support `return_featmap=True` if local loss is enabled)
+- `distributed.py` — distributed helpers (**not used** in the provided single-GPU run)
 
-You can choose to download only the weights of the pretrained backbone used for downstream tasks, or the full checkpoint which contains backbone and projection head weights.
+---
 
-<table>
-  <tr>
-    <th>arch</th>
-    <th>params</th>
-    <th>accuracy</th>
-    <th colspan="6">download</th>
-  </tr>
-  <tr>
-    <td>ResNet-50</td>
-    <td>23M</td>
-    <td>73.2%</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vicreg/resnet50.pth">backbone only</a></td>
-    <td><a href="https://dl.fbaipublicfiles.com/vicreg/resnet50_fullckpt.pth">full ckpt</a></td>
-  </tr>
-  <tr>
-    <td>ResNet-50 (x2)</td>
-    <td>93M</td>
-    <td>75.5%</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vicreg/resnet50x2.pth">backbone only</a></td>
-    <td><a href="https://dl.fbaipublicfiles.com/vicreg/resnet50x2_fullckpt.pth">full ckpt</a></td>
-  </tr>
-  <tr>
-    <td>ResNet-200 (x2)</td>
-    <td>250M</td>
-    <td>77.3%</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vicreg/resnet200x2.pth">backbone only</a></td>
-    <td><a href="https://dl.fbaipublicfiles.com/vicreg/resnet200x2_fullckpt.pth">full ckpt</a></td>
-  </tr>
-</table>
+## Requirements
 
-## Pretrained models on PyTorch Hub
+- Python 3.9+
+- PyTorch + torchvision (CUDA recommended)
+- `wandb` (optional)
 
+Example:
+```bash
+conda create -n vicreg python=3.10 -y
+conda activate vicreg
+pip install torch torchvision wandb
+```
+
+---
+
+## Dataset Format (Flat Folder)
+
+Your dataset must be a single directory containing images directly (no class subfolders):
+
+```
+/path/to/all_images/train/
+  img_000001.jpg
+  img_000002.png
+  ...
+```
+
+Supported extensions (as coded): `jpg, jpeg, png, bmp, tif, tiff`
+
+### Notes
+- The dataset class (`FlatImageFolder`) **skips corrupted images** (up to 10 retries).
+- Each sample returns two augmented views `(v1, v2)` and a dummy label `0`.
+
+### Using 500K + Additional 200K Images
+If you have **500K original + 200K supplemental** images, the simplest setup is to **merge them into one folder** (≈700K total):
+```
+all_images/train/   # contains both sources
+```
+(Alternatively, use symlinks to avoid duplicating storage.)
+
+---
+
+## Data Augmentations (`TrainTransform`)
+
+The training script uses:
 ```python
-import torch
-resnet50 = torch.hub.load('facebookresearch/vicreg:main', 'resnet50')
-resnet50x2 = torch.hub.load('facebookresearch/vicreg:main', 'resnet50x2')
-resnet200x2 = torch.hub.load('facebookresearch/vicreg:main', 'resnet200x2')
+transforms = aug.TrainTransform()
+```
+Your `TrainTransform` returns two views `(v1, v2)` per image. Transforms used include:
+- RandomResizedCrop (size=96, scale 0.2–1.0, bicubic)
+- RandomHorizontalFlip
+- RandomRotation (small degrees)
+- ColorJitter (via RandomApply)
+- RandomGrayscale
+- GaussianBlur (strong for view1, weak for view2)
+- ToTensor + ImageNet normalization
+- Solarization is present but disabled if `p=0.0`
+
+---
+
+## Training (Single GPU)
+
+Example run command (matches your provided configuration):
+
+```bash
+python main_vicreg.py   --data-dir /home/sd6701/datasets/dl_vicreg_final_exp_dataset_v2/all_images/train/   --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v13/   --arch resnet50x2   --epochs 500   --batch-size 1024   --base-lr 0.25   --log-freq-time 5   --device cuda   --mlp 2048-2048-1024   --use-local-loss   --local-mlp 1024-512   --local-loss-weight 0.2   --enable-wandb   --wandb-project dl_final_vicreg   --wandb-entity sd6701-new-york-university   --wandb-name r50_augs_glo_loc_13
 ```
 
+### Learning Rate Schedule (as implemented)
+- Warmup for **10% of epochs** (e.g., 50 epochs when training 500 epochs)
+- Then cosine decay to **0.001 × peak LR**
+- Peak LR is computed in code as: `base_lr * batch_size / 256`
 
-## Training
+---
 
-Install PyTorch ([pytorch.org](http://pytorch.org)) and download [ImageNet](https://imagenet.stanford.edu/). The code has been developed for PyTorch version 1.8.1 and torchvision version 0.9.1, but should work with other versions just as well.
+## SLURM Script (Example)
 
-### Single-node local training
-
-To pretrain VICReg with ResNet-50 on a single node with 8 GPUs for 100 epochs, run:
-
-```
-python -m torch.distributed.launch --nproc_per_node=8 main_vicreg.py --data-dir /path/to/imagenet/ --exp-dir /path/to/experiment/ --arch resnet50 --epochs 100 --batch-size 512 --base-lr 0.3
-```
-
-### Multi-node training with SLURM
-
-To pretrain VICReg with [submitit](https://github.com/facebookincubator/submitit) (`pip install submitit`) and SLURM on 4 nodes with 8 GPUs each for 1000 epochs, run:
-
-```
-python run_with_submitit.py --nodes 4 --ngpus 8 --data-dir /path/to/imagenet --exp-dir /path/to/experiment/ --arch resnet50 --epochs 1000 --batch-size 2048 --base-lr 0.2
+Submit:
+```bash
+sbatch run_vicreg.slurm
 ```
 
+**Important:** when splitting the command across lines, every continued line must end with `\`.
 
-## Evaluation
+A corrected snippet (note the `\` after `--wandb-name ...`):
 
-### Linear evaluation
-
-To evaluate a pretrained ResNet-50 backbone on linear classification on ImageNet, run:
-
-```
-python evaluate.py --data-dir /path/to/imagenet/ --pretrained /path/to/checkpoint/resnet50.pth --exp-dir /path/to/experiment/ --lr-head 0.02
+```bash
+python main_vicreg.py   --data-dir /home/sd6701/datasets/dl_vicreg_final_exp_dataset_v2/all_images/train/   --exp-dir /home/sd6701/fall2025_deeplearning/final-opts/vicreg_cc3m_resnet50x2_v13/   --arch resnet50x2   --epochs 500   --batch-size 1024   --base-lr 0.25   --log-freq-time 5   --device cuda   --enable-wandb   --wandb-project dl_final_vicreg   --wandb-entity sd6701-new-york-university   --wandb-name r50_augs_glo_loc_13   --mlp 2048-2048-1024   --use-local-loss   --local-mlp 1024-512   --local-loss-weight 0.2
 ```
 
-### Semi-supervised evaluation
+Tips:
+- If SLURM allocates `--cpus-per-task=8`, consider setting `--num-workers 8` to match.
+- Ensure SLURM wall-time is sufficient for 500 epochs.
 
-To evaluate a pretrained ResNet50-model on semi-supervised fine-tunning on 1% of ImageNet labels, run:
+---
 
+## Outputs and Checkpoints
+
+All outputs are written to `--exp-dir`.
+
+### Files
+- `stats.txt` — periodic JSON logs
+- `model.pth` — checkpoint saved every epoch (contains `epoch`, `model`, `optimizer`)
+- `<arch>.pth` — final backbone-only weights (e.g., `resnet50x2.pth`)
+
+### Resume (Already Supported)
+If this file exists:
 ```
-python evaluate.py --data-dir /path/to/imagenet/ --pretrained /path/to/checkpoint/resnet50.pth --exp-dir /path/to/experiment/ --weights finetune --train-perc 1 --epochs 20 --lr-backbone 0.03 --lr-classifier 0.08 --weight-decay 0
+<exp-dir>/model.pth
+```
+the script automatically resumes from it. Just rerun the same command with the same `--exp-dir`.
+
+---
+
+## Optional: Add a `--resume` Flag (Load Any Checkpoint Path)
+
+Right now the script only loads `<exp-dir>/model.pth`. If you want to resume from an arbitrary checkpoint path, add:
+
+### 1) Add argument
+```python
+parser.add_argument("--resume", type=Path, default=None,
+                    help="Path to checkpoint to resume from")
 ```
 
-To evaluate a pretrained ResNet50-model on semi-supervised fine-tunning on 10% of ImageNet labels, run:
-
+### 2) Replace the resume block with
+```python
+ckpt_path = args.resume if args.resume is not None else (args.exp_dir / "model.pth")
+if ckpt_path.is_file():
+    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    start_epoch = ckpt["epoch"]
+    model.load_state_dict(ckpt["model"])
+    optimizer.load_state_dict(ckpt["optimizer"])
+else:
+    start_epoch = 0
 ```
-python evaluate.py --data-dir /path/to/imagenet/ --pretrained /path/to/checkpoint/resnet50.pth --exp-dir /path/to/checkpoint/resnet.pth --weights finetune --train-perc 10 --epochs 20 --lr-backbone 0.01 --lr-classifier 0.1 --weight-decay 0
+
+---
+
+## W&B Notes (Recommended Practice)
+
+Avoid hardcoding API keys in code. Prefer:
+```bash
+export WANDB_API_KEY="YOUR_KEY"
 ```
+Then use `--enable-wandb` and the project/entity/name flags.
 
-## Acknowledgement
+---
 
-This repository is built using the [Barlow Twins](https://github.com/facebookresearch/barlowtwins) repository.
+## License / Attribution
 
-## License
-
-This project is released under MIT License, which allows commercial use. See [LICENSE](LICENSE) for details.
-
-## Citation
-If you find this repository useful, please consider giving a star :star: and citation:
-
-```
-@inproceedings{bardes2022vicreg,
-  author  = {Adrien Bardes and Jean Ponce and Yann LeCun},
-  title   = {VICReg: Variance-Invariance-Covariance Regularization For Self-Supervised Learning},
-  booktitle = {ICLR},
-  year    = {2022},
-}
-```
+This training code is derived from Meta’s VICReg implementation and is governed by the LICENSE file in the original source tree (if included in your project).
