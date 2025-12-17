@@ -12,6 +12,11 @@ Key features:
 
 ---
 
+## Pretrained Models
+Pre-trained Models
+You can choose to download only the weights of the pretrained backbone used for downstream tasks, or the full checkpoint which contains backbone and projection head weights.
+[ckpt](https://drive.google.com/file/d/1qTiBTeOpE-zEGb6toaAa45FDXtecGaRp/view?usp=sharing)
+
 ## Repository Layout
 
 - `main_vicreg.py` — training script
